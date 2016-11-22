@@ -3,10 +3,12 @@
 namespace AvalancheDevelopment\SwaggerHeaderMiddleware;
 
 use PHPUnit_Framework_TestCase;
-use Psr\Http\Message\RequestInterface as Request;
-use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use ReflectionClass;
 
 class HeaderTest extends PHPUnit_Framework_TestCase
 {
@@ -25,5 +27,31 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $header = new Header;
 
         $this->assertAttributeEquals($logger, 'logger', $header);
+    }
+
+    public function testLog()
+    {
+        $message = 'test debug message';
+
+        $mockLogger = $this->createMock(LoggerInterface::class);
+        $mockLogger->expects($this->once())
+            ->method('debug')
+            ->with("swagger-header-middleware: {$message}");
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedLog = $reflectedHeader->getMethod('log');
+        $reflectedLog->setAccessible(true);
+        $reflectedLogger = $reflectedHeader->getProperty('logger');
+        $reflectedLogger->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods(null)
+            ->getMock();
+
+        $reflectedLogger->setValue($header, $mockLogger);
+        $reflectedLog->invokeArgs($header, [
+            $message,
+        ]);       
     }
 }
