@@ -4,9 +4,19 @@ namespace AvalancheDevelopment\SwaggerHeaderMiddleware;
 
 use Psr\Http\Message\RequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\NullLogger;
 
-class Header
+class Header implements LoggerAwareInterface
 {
+
+    use LoggerAwareTrait;
+
+    public function __construct()
+    {
+        $this->logger = new NullLogger;
+    }
 
     /**
      * @param Request $request
