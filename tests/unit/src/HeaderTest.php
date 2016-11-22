@@ -29,6 +29,20 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $this->assertAttributeEquals($logger, 'logger', $header);
     }
 
+    public function testInvokeBailsIfNoSwaggerFound() {}
+
+    public function testInvokePullsConsumeTypesFromSwagger() {}
+
+    public function testInvokeAllowsRequestIfAcceptableHeader() {}
+
+    public function testInvokeBailsIfUnacceptableHeader() {}
+
+    public function testCheckIncomingHeaderReturnsTrueOnMatch() {}
+
+    public function testCheckIncomingHeaderReturnsFalseIfEmpty() {}
+
+    public function testCheckIncomingHeaderReturnsFalseIfNoMatch() {}
+
     public function testLog()
     {
         $message = 'test debug message';

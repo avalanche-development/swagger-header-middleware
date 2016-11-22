@@ -2,6 +2,7 @@
 
 namespace AvalancheDevelopment\SwaggerHeaderMiddleware;
 
+use AvalancheDevelopment\Peel\HttpError;
 use Psr\Http\Message\RequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerAwareInterface;
@@ -31,15 +32,29 @@ class Header implements LoggerAwareInterface
             return $next($request, $response);
         }
 
-        // step one - validate header of incoming request
+        $consumeTypes = $request->getAttribute('swagger')['consumes'];
+        if (!$this->checkIncomingHeader($request, $consumeTypes)) {
+            throw new HttpError\NotAcceptable('Unacceptable header was passed into this endpoint');
+        }
 
         $result = $next($request, $response);
 
         // step three - format as json if array
-        // step four - complain if json ain't right
+        // step four - bail if json ain't right (500)
         // step five - attach outbound header
+        // step six - bail if header is unacceptable (417)
 
         return $result;
+    }
+
+    /**
+     * @param Request $request
+     * @param array $consumeTypes
+     * @return boolean
+     */
+    public function checkIncomingHeader(Request $request, $consumeTypes)
+    {
+        return true;
     }
 
     /**

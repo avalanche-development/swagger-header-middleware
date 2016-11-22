@@ -4,9 +4,48 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "67f14ef41db48ea6c857ac0d9ea7743d",
-    "content-hash": "30b1550e3e2cbae6d36a66b04adc40b9",
+    "hash": "81ad1efdf29770d8600f3940dbe11e98",
+    "content-hash": "9c7c129e7a5c65fb4ee5257bc5721303",
     "packages": [
+        {
+            "name": "avalanche-development/peel",
+            "version": "0.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/avalanche-development/peel.git",
+                "reference": "77b0cac07af981bb180477f94b80e4fc40a760bd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/avalanche-development/peel/zipball/77b0cac07af981bb180477f94b80e4fc40a760bd",
+                "reference": "77b0cac07af981bb180477f94b80e4fc40a760bd",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.6.0"
+            },
+            "require-dev": {
+                "codeclimate/php-test-reporter": "^0.3.2",
+                "phpunit/phpunit": "^5.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "AvalancheDevelopment\\Peel\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "jacobemerick",
+                    "email": "jpemeric@gmail.com"
+                }
+            ],
+            "time": "2016-11-12 18:03:35"
+        },
         {
             "name": "psr/http-message",
             "version": "1.0.1",
