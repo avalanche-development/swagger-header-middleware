@@ -52,15 +52,41 @@ class Header implements LoggerAwareInterface
      * @param array $consumeTypes
      * @return boolean
      */
-    public function checkIncomingHeader(Request $request, $consumeTypes)
+    protected function checkIncomingHeader(Request $request, $consumeTypes)
     {
-        return true;
+        $contentHeaders = $this->extractContentHeader($request);
+
+        foreach ($consumeTypes as $type) {
+            if (in_array($type, $contentHeaders)) {
+                return true;
+            }
+            // todo wildcard content matching
+        }
+
+        return false;
+    }
+
+    /**
+     * @param Request $request
+     * @return array
+     */
+    protected function extractContentHeader(Request $request)
+    {
+        $contentHeaders = $request->getHeader('content');
+        $contentHeaders = explode(',', $contentHeaders);
+        $contentHeaders = array_map(function ($entity) {
+            $entity = explode(';', $entity);
+            $entity = current($entity);
+            return strtolower($entity);
+        }, $contentHeaders);
+
+        return $contentHeaders;
     }
 
     /**
      * @param string $message
      */
-    private function log($message)
+    protected function log($message)
     {
         $this->logger->debug("swagger-header-middleware: {$message}");
     }
