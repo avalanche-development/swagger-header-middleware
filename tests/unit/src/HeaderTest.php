@@ -43,6 +43,91 @@ class HeaderTest extends PHPUnit_Framework_TestCase
 
     public function testCheckIncomingHeaderReturnsFalseIfNoMatch() {}
 
+    public function testExtractContentHeaderHandlesMultipleTypes()
+    {
+        $contentTypes = 'application/vnd.github+json, application/json';
+        $contentTypeCount = 2;
+
+        $mockRequest = $this->createMock(RequestInterface::class);
+        $mockRequest->expects($this->once())
+            ->method('getHeader')
+            ->with('content')
+            ->willReturn($contentTypes);
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedExtractContentHeader = $reflectedHeader->getMethod('extractContentHeader');
+        $reflectedExtractContentHeader->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods(null)
+            ->getMock();
+
+        $result = $reflectedExtractContentHeader->invokeArgs($header, [
+            $mockRequest,
+        ]);
+
+        $this->assertCount($contentTypeCount, $result);
+    }
+
+    public function testExtractContentHeaderParsesOutOptions()
+    {
+        $contentType = 'text/plain; charset=utf8';
+        $extractedContentHeader = [
+            'text/plain',
+        ];
+
+        $mockRequest = $this->createMock(RequestInterface::class);
+        $mockRequest->expects($this->once())
+            ->method('getHeader')
+            ->with('content')
+            ->willReturn($contentType);
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedExtractContentHeader = $reflectedHeader->getMethod('extractContentHeader');
+        $reflectedExtractContentHeader->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods(null)
+            ->getMock();
+
+        $result = $reflectedExtractContentHeader->invokeArgs($header, [
+            $mockRequest,
+        ]);
+
+        $this->assertEquals($extractedContentHeader, $result);
+    }
+
+    public function testExtractContentHeaderLowersCasing()
+    {
+        $contentType = 'Application/Json';
+        $casedContentHeader = [
+            'application/json',
+        ];
+
+        $mockRequest = $this->createMock(RequestInterface::class);
+        $mockRequest->expects($this->once())
+            ->method('getHeader')
+            ->with('content')
+            ->willReturn($contentType);
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedExtractContentHeader = $reflectedHeader->getMethod('extractContentHeader');
+        $reflectedExtractContentHeader->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods(null)
+            ->getMock();
+
+        $result = $reflectedExtractContentHeader->invokeArgs($header, [
+            $mockRequest,
+        ]);
+
+        $this->assertEquals($casedContentHeader, $result);
+    }
+
     public function testLog()
     {
         $message = 'test debug message';
