@@ -280,6 +280,56 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($casedContentHeader, $result);
     }
 
+    public function testIsJsonContentReturnsTrueIfJson()
+    {
+        $content = '{"key":"value"}';
+
+        $mockStream = $this->createMock(StreamInterface::class);
+        $mockStream->expects($this->once())
+            ->method('__toString')
+            ->willReturn($content);
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedIsJsonContent = $reflectedHeader->getMethod('isJsonContent');
+        $reflectedIsJsonContent->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods(null)
+            ->getMock();
+
+        $result = $reflectedIsJsonContent->invokeArgs($header, [
+            $mockStream,
+        ]);
+
+        $this->assertTrue($result);
+    }
+
+    public function testIsJsonContentReturnsFalseIfNotJson()
+    {
+        $content = 'some text';
+
+        $mockStream = $this->createMock(StreamInterface::class);
+        $mockStream->expects($this->once())
+            ->method('__toString')
+            ->willReturn($content);
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedIsJsonContent = $reflectedHeader->getMethod('isJsonContent');
+        $reflectedIsJsonContent->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods(null)
+            ->getMock();
+
+        $result = $reflectedIsJsonContent->invokeArgs($header, [
+            $mockStream,
+        ]);
+
+        $this->assertFalse($result);
+    }
+
     public function testLog()
     {
         $message = 'test debug message';

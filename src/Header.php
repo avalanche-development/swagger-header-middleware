@@ -5,6 +5,7 @@ namespace AvalancheDevelopment\SwaggerHeaderMiddleware;
 use AvalancheDevelopment\Peel\HttpError;
 use Psr\Http\Message\RequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\StreamInterface as Stream;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
@@ -96,11 +97,33 @@ class Header implements LoggerAwareInterface
      */
     protected function attachContentHeader(Response $response)
     {
-        // if no content, quick bail
-        // if content, test if json-ness
-        // if json, attach json header
-        // if not, attach text/plain
+        if (!empty($response->getHeader('content'))) {
+            return $response;
+        }
+
+        if (!$response->getBody()->getSize()) {
+            return $response;
+        }
+
+        $content = $response->getBody();
+        if ($this->isJsonContent($content)) {
+            $response = $response->withHeader('Content', 'application/json');
+            return $response;
+        }
+
+        $response = $response->withHeader('Content', 'text/plain');
         return $response;
+    }
+
+    /**
+     * @param Stream $content
+     * @return boolean
+     */
+    protected function isJsonContent(Stream $content)
+    {
+        $data = (string) $content;
+        $decodedData = json_decode($data);
+        return json_last_error() === JSON_ERROR_NONE;
     }
 
     /**
