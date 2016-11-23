@@ -33,7 +33,7 @@ class Header implements LoggerAwareInterface
         }
 
         $consumeTypes = $request->getAttribute('swagger')['consumes'];
-        if (!$this->checkIncomingHeader($request, $consumeTypes)) {
+        if (!$this->checkIncomingContent($request, $consumeTypes)) {
             throw new HttpError\NotAcceptable('Unacceptable header was passed into this endpoint');
         }
 
@@ -52,15 +52,18 @@ class Header implements LoggerAwareInterface
      * @param array $consumeTypes
      * @return boolean
      */
-    protected function checkIncomingHeader(Request $request, $consumeTypes)
+    protected function checkIncomingContent(Request $request, $consumeTypes)
     {
-        $contentHeaders = $this->extractContentHeader($request);
+        if (!$request->getBody()->getSize()) {
+            return true;
+        }
 
+        $contentHeaders = $this->extractContentHeader($request);
         foreach ($consumeTypes as $type) {
             if (in_array($type, $contentHeaders)) {
                 return true;
             }
-            // todo wildcard content matching
+            // todo wildcard mime type matching
         }
 
         return false;
