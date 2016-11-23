@@ -38,11 +38,15 @@ class Header implements LoggerAwareInterface
         }
 
         $result = $next($request, $response);
+        $result = $this->attachContentHeader($result);
 
-        // step three - format as json if array
-        // step four - bail if json ain't right (500)
-        // step five - attach outbound header
-        // step six - bail if header is unacceptable (417)
+        $produceTypes = $request->getAttribute('swagger')['produces'];
+        if (!$this->checkOutgoingContent($result, $produceTypes)) {
+            throw new HttpError\InternalServerError('Invalid content detected');
+        }
+        if (!$this->checkExpectHeader($request, $result)) {
+            throw new HttpError\ExpectationFailed('Unexpected content detected');
+        }
 
         return $result;
     }
@@ -52,7 +56,7 @@ class Header implements LoggerAwareInterface
      * @param array $consumeTypes
      * @return boolean
      */
-    protected function checkIncomingContent(Request $request, $consumeTypes)
+    protected function checkIncomingContent(Request $request, array $consumeTypes)
     {
         if (!$request->getBody()->getSize()) {
             return true;
@@ -84,6 +88,44 @@ class Header implements LoggerAwareInterface
         }, $contentHeaders);
 
         return $contentHeaders;
+    }
+
+    /**
+     * @param Response $response
+     * @return Response
+     */
+    protected function attachContentHeader(Response $response)
+    {
+        // if no content, quick bail
+        // if content, test if json-ness
+        // if json, attach json header
+        // if not, attach text/plain
+        return $response;
+    }
+
+    /**
+     * @param Response $response
+     * @param array $produceTypes
+     * @return Response
+     */
+    protected function checkOutgoingContent(Response $response, array $produceTypes)
+    {
+        // if no content, quick bail
+        // else, etc
+        return true;
+    }
+
+    /**
+     * @param Request
+     * @param Response
+     * @return boolean
+     */
+    protected function checkExpectHeader(Request $request, Response $response)
+    {
+        // if no content, quick bail
+        // if no expectations, quick bail
+        // else, etc
+        return true;
     }
 
     /**
