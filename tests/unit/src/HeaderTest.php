@@ -5,6 +5,7 @@ namespace AvalancheDevelopment\SwaggerHeaderMiddleware;
 use PHPUnit_Framework_TestCase;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -37,11 +38,162 @@ class HeaderTest extends PHPUnit_Framework_TestCase
 
     public function testInvokeBailsIfUnacceptableHeader() {}
 
-    public function testCheckIncomingHeaderReturnsTrueOnMatch() {}
+    public function testCheckIncomingContentReturnsTrueIfEmptyBody()
+    {
+        $mockStream = $this->createMock(StreamInterface::class);
+        $mockStream->expects($this->once())
+            ->method('getSize')
+            ->willReturn(null);
 
-    public function testCheckIncomingHeaderReturnsFalseIfEmpty() {}
+        $mockRequest = $this->createMock(RequestInterface::class);
+        $mockRequest->expects($this->once())
+            ->method('getBody')
+            ->willReturn($mockStream);
 
-    public function testCheckIncomingHeaderReturnsFalseIfNoMatch() {}
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedCheckIncomingContent = $reflectedHeader->getMethod('checkIncomingContent');
+        $reflectedCheckIncomingContent->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'extractContentHeader'
+            ])
+            ->getMock();
+        $header->expects($this->never())
+            ->method('extractContentHeader');
+
+        $result = $reflectedCheckIncomingContent->invokeArgs($header, [
+            $mockRequest,
+            [],
+        ]);
+
+        $this->assertTrue($result);
+    }
+
+    public function testCheckIncomingContentReturnsTrueOnMatch()
+    {
+        $contentHeader = [
+            'application/json',
+        ];
+        $consumeTypes = [
+            'application/vnd.github+json',
+            'application/json',
+        ];
+
+        $mockStream = $this->createMock(StreamInterface::class);
+        $mockStream->expects($this->once())
+            ->method('getSize')
+            ->willReturn(1);
+
+        $mockRequest = $this->createMock(RequestInterface::class);
+        $mockRequest->expects($this->once())
+            ->method('getBody')
+            ->willReturn($mockStream);
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedCheckIncomingContent = $reflectedHeader->getMethod('checkIncomingContent');
+        $reflectedCheckIncomingContent->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'extractContentHeader'
+            ])
+            ->getMock();
+        $header->expects($this->once())
+            ->method('extractContentHeader')
+            ->willReturn($contentHeader);
+
+        $result = $reflectedCheckIncomingContent->invokeArgs($header, [
+            $mockRequest,
+            $consumeTypes,
+        ]);
+
+        $this->assertTrue($result);
+    }
+
+    public function testCheckIncomingContentReturnsFalseIfNotPassed()
+    {
+        $contentHeader = [];
+        $consumeTypes = [
+            'application/vnd.github+json',
+            'application/json',
+        ];
+
+        $mockStream = $this->createMock(StreamInterface::class);
+        $mockStream->expects($this->once())
+            ->method('getSize')
+            ->willReturn(1);
+
+        $mockRequest = $this->createMock(RequestInterface::class);
+        $mockRequest->expects($this->once())
+            ->method('getBody')
+            ->willReturn($mockStream);
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedCheckIncomingContent = $reflectedHeader->getMethod('checkIncomingContent');
+        $reflectedCheckIncomingContent->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'extractContentHeader'
+            ])
+            ->getMock();
+        $header->expects($this->once())
+            ->method('extractContentHeader')
+            ->willReturn($contentHeader);
+
+        $result = $reflectedCheckIncomingContent->invokeArgs($header, [
+            $mockRequest,
+            $consumeTypes,
+        ]);
+
+        $this->assertFalse($result);
+    }
+
+    public function testCheckIncomingContentReturnsFalseIfNoMatch()
+    {
+        $contentHeader = [
+            'text/plain',
+        ];
+        $consumeTypes = [
+            'application/vnd.github+json',
+            'application/json',
+        ];
+
+        $mockStream = $this->createMock(StreamInterface::class);
+        $mockStream->expects($this->once())
+            ->method('getSize')
+            ->willReturn(1);
+
+        $mockRequest = $this->createMock(RequestInterface::class);
+        $mockRequest->expects($this->once())
+            ->method('getBody')
+            ->willReturn($mockStream);
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedCheckIncomingContent = $reflectedHeader->getMethod('checkIncomingContent');
+        $reflectedCheckIncomingContent->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'extractContentHeader'
+            ])
+            ->getMock();
+        $header->expects($this->once())
+            ->method('extractContentHeader')
+            ->willReturn($contentHeader);
+
+        $result = $reflectedCheckIncomingContent->invokeArgs($header, [
+            $mockRequest,
+            $consumeTypes,
+        ]);
+
+        $this->assertFalse($result);
+    }
 
     public function testExtractContentHeaderHandlesMultipleTypes()
     {
