@@ -58,11 +58,11 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $header = $this->getMockBuilder(Header::class)
             ->disableOriginalConstructor()
             ->setMethods([
-                'extractContentHeader'
+                'checkMessageContent'
             ])
             ->getMock();
         $header->expects($this->never())
-            ->method('extractContentHeader');
+            ->method('checkMessageContent');
 
         $result = $reflectedCheckIncomingContent->invokeArgs($header, [
             $mockRequest,
@@ -72,11 +72,8 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    public function testCheckIncomingContentReturnsTrueOnMatch()
+    public function testCheckIncomingContentPassesOnCheckerIfContainsBody()
     {
-        $contentHeader = [
-            'application/json',
-        ];
         $consumeTypes = [
             'application/vnd.github+json',
             'application/json',
@@ -88,8 +85,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->willReturn(1);
 
         $mockRequest = $this->createMock(RequestInterface::class);
-        $mockRequest->expects($this->once())
-            ->method('getBody')
+        $mockRequest->method('getBody')
             ->willReturn($mockStream);
 
         $reflectedHeader = new ReflectionClass(Header::class);
@@ -99,12 +95,13 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $header = $this->getMockBuilder(Header::class)
             ->disableOriginalConstructor()
             ->setMethods([
-                'extractContentHeader'
+                'checkMessageContent'
             ])
             ->getMock();
         $header->expects($this->once())
-            ->method('extractContentHeader')
-            ->willReturn($contentHeader);
+            ->method('checkMessageContent')
+            ->with($mockRequest, $consumeTypes)
+            ->willReturn(true);
 
         $result = $reflectedCheckIncomingContent->invokeArgs($header, [
             $mockRequest,
@@ -114,27 +111,21 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    public function testCheckIncomingContentReturnsFalseIfNotPassed()
+    public function testCheckMessageContentReturnsTrueIfPassed()
     {
-        $contentHeader = [];
+        $contentHeader = [
+            'application/json',
+        ];
         $consumeTypes = [
             'application/vnd.github+json',
             'application/json',
         ];
 
-        $mockStream = $this->createMock(StreamInterface::class);
-        $mockStream->expects($this->once())
-            ->method('getSize')
-            ->willReturn(1);
-
-        $mockRequest = $this->createMock(RequestInterface::class);
-        $mockRequest->expects($this->once())
-            ->method('getBody')
-            ->willReturn($mockStream);
+        $mockMessage = $this->createMock(MessageInterface::class);
 
         $reflectedHeader = new ReflectionClass(Header::class);
-        $reflectedCheckIncomingContent = $reflectedHeader->getMethod('checkIncomingContent');
-        $reflectedCheckIncomingContent->setAccessible(true);
+        $reflectedCheckMessageContent = $reflectedHeader->getMethod('checkMessageContent');
+        $reflectedCheckMessageContent->setAccessible(true);
 
         $header = $this->getMockBuilder(Header::class)
             ->disableOriginalConstructor()
@@ -144,17 +135,49 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->getMock();
         $header->expects($this->once())
             ->method('extractContentHeader')
+            ->with($mockMessage)
             ->willReturn($contentHeader);
 
-        $result = $reflectedCheckIncomingContent->invokeArgs($header, [
-            $mockRequest,
+        $result = $reflectedCheckMessageContent->invokeArgs($header, [
+            $mockMessage,
+            $consumeTypes,
+        ]);
+
+        $this->assertTrue($result);
+    }
+
+    public function testCheckMessageContentReturnsFalseIfNotPassed()
+    {
+        $contentHeader = [];
+        $consumeTypes = [
+            'application/vnd.github+json',
+            'application/json',
+        ];
+
+        $mockMessage = $this->createMock(MessageInterface::class);
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedCheckMessageContent = $reflectedHeader->getMethod('checkMessageContent');
+        $reflectedCheckMessageContent->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'extractContentHeader'
+            ])
+            ->getMock();
+        $header->method('extractContentHeader')
+            ->willReturn($contentHeader);
+
+        $result = $reflectedCheckMessageContent->invokeArgs($header, [
+            $mockMessage,
             $consumeTypes,
         ]);
 
         $this->assertFalse($result);
     }
 
-    public function testCheckIncomingContentReturnsFalseIfNoMatch()
+    public function testCheckMessageContentReturnsFalseIfNoMatch()
     {
         $contentHeader = [
             'text/plain',
@@ -164,19 +187,11 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             'application/json',
         ];
 
-        $mockStream = $this->createMock(StreamInterface::class);
-        $mockStream->expects($this->once())
-            ->method('getSize')
-            ->willReturn(1);
-
-        $mockRequest = $this->createMock(RequestInterface::class);
-        $mockRequest->expects($this->once())
-            ->method('getBody')
-            ->willReturn($mockStream);
+        $mockMessage = $this->createMock(MessageInterface::class);
 
         $reflectedHeader = new ReflectionClass(Header::class);
-        $reflectedCheckIncomingContent = $reflectedHeader->getMethod('checkIncomingContent');
-        $reflectedCheckIncomingContent->setAccessible(true);
+        $reflectedCheckMessageContent = $reflectedHeader->getMethod('checkMessageContent');
+        $reflectedCheckMessageContent->setAccessible(true);
 
         $header = $this->getMockBuilder(Header::class)
             ->disableOriginalConstructor()
@@ -184,12 +199,11 @@ class HeaderTest extends PHPUnit_Framework_TestCase
                 'extractContentHeader'
             ])
             ->getMock();
-        $header->expects($this->once())
-            ->method('extractContentHeader')
+        $header->method('extractContentHeader')
             ->willReturn($contentHeader);
 
-        $result = $reflectedCheckIncomingContent->invokeArgs($header, [
-            $mockRequest,
+        $result = $reflectedCheckMessageContent->invokeArgs($header, [
+            $mockMessage,
             $consumeTypes,
         ]);
 
