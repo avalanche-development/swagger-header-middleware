@@ -123,7 +123,7 @@ class Header implements LoggerAwareInterface
     {
         $data = (string) $content;
         $decodedData = json_decode($data);
-        return json_last_error() === JSON_ERROR_NONE;
+        return (json_last_error() === JSON_ERROR_NONE) && ($decodedData !== null);
     }
 
     /**
