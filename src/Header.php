@@ -3,6 +3,7 @@
 namespace AvalancheDevelopment\SwaggerHeaderMiddleware;
 
 use AvalancheDevelopment\Peel\HttpError;
+use Psr\Http\Message\MessageInterface as Message;
 use Psr\Http\Message\RequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\StreamInterface as Stream;
@@ -63,9 +64,19 @@ class Header implements LoggerAwareInterface
             return true;
         }
 
-        $contentHeaders = $this->extractContentHeader($request);
-        foreach ($consumeTypes as $type) {
-            if (in_array($type, $contentHeaders)) {
+        return $this->checkMessageContent($request, $consumeTypes);
+    }
+
+    /**
+     * @param Message $message
+     * @param array $acceptableTypes
+     * @return boolean
+     */
+    protected function checkMessageContent(Message $message, array $acceptableTypes)
+    {
+        $contentType = $this->extractContentHeader($message);
+        foreach ($acceptableTypes as $type) {
+            if (in_array($type, $contentType)) {
                 return true;
             }
             // todo wildcard mime type matching
@@ -75,12 +86,12 @@ class Header implements LoggerAwareInterface
     }
 
     /**
-     * @param Request $request
+     * @param Message $message
      * @return array
      */
-    protected function extractContentHeader(Request $request)
+    protected function extractContentHeader(Message $message)
     {
-        $contentHeaders = $request->getHeader('content');
+        $contentHeaders = $message->getHeader('content');
         $contentHeaders = explode(',', $contentHeaders);
         $contentHeaders = array_map(function ($entity) {
             $entity = explode(';', $entity);
@@ -133,9 +144,11 @@ class Header implements LoggerAwareInterface
      */
     protected function checkOutgoingContent(Response $response, array $produceTypes)
     {
-        // if no content, quick bail
-        // else, etc
-        return true;
+        if (!empty($response->getHeader('content'))) {
+            return true;
+        }
+
+        return $this->checkMessageContent($response, $produceTypes);
     }
 
     /**

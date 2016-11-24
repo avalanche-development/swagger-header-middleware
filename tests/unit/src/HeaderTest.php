@@ -3,6 +3,7 @@
 namespace AvalancheDevelopment\SwaggerHeaderMiddleware;
 
 use PHPUnit_Framework_TestCase;
+use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
@@ -200,8 +201,8 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $contentTypes = 'application/vnd.github+json, application/json';
         $contentTypeCount = 2;
 
-        $mockRequest = $this->createMock(RequestInterface::class);
-        $mockRequest->expects($this->once())
+        $mockMessage = $this->createMock(MessageInterface::class);
+        $mockMessage->expects($this->once())
             ->method('getHeader')
             ->with('content')
             ->willReturn($contentTypes);
@@ -216,7 +217,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->getMock();
 
         $result = $reflectedExtractContentHeader->invokeArgs($header, [
-            $mockRequest,
+            $mockMessage,
         ]);
 
         $this->assertCount($contentTypeCount, $result);
@@ -229,8 +230,8 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             'text/plain',
         ];
 
-        $mockRequest = $this->createMock(RequestInterface::class);
-        $mockRequest->expects($this->once())
+        $mockMessage = $this->createMock(MessageInterface::class);
+        $mockMessage->expects($this->once())
             ->method('getHeader')
             ->with('content')
             ->willReturn($contentType);
@@ -245,7 +246,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->getMock();
 
         $result = $reflectedExtractContentHeader->invokeArgs($header, [
-            $mockRequest,
+            $mockMessage,
         ]);
 
         $this->assertEquals($extractedContentHeader, $result);
@@ -258,8 +259,8 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             'application/json',
         ];
 
-        $mockRequest = $this->createMock(RequestInterface::class);
-        $mockRequest->expects($this->once())
+        $mockMessage = $this->createMock(MessageInterface::class);
+        $mockMessage->expects($this->once())
             ->method('getHeader')
             ->with('content')
             ->willReturn($contentType);
@@ -274,7 +275,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->getMock();
 
         $result = $reflectedExtractContentHeader->invokeArgs($header, [
-            $mockRequest,
+            $mockMessage,
         ]);
 
         $this->assertEquals($casedContentHeader, $result);
