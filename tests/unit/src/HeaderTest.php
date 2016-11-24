@@ -280,6 +280,147 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($casedContentHeader, $result);
     }
 
+    public function testAttachContentHeaderBailsIfAlreadySet()
+    {
+        $mockResponse = $this->createMock(ResponseInterface::class);
+        $mockResponse->expects($this->once())
+            ->method('getHeader')
+            ->with('content')
+            ->willReturn([
+                'some value',
+            ]);
+        $mockResponse->expects($this->never())
+            ->method('getBody');
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedAttachContentHeader = $reflectedHeader->getMethod('attachContentHeader');
+        $reflectedAttachContentHeader->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'isJsonContent',
+            ])
+            ->getMock();
+        $header->expects($this->never())
+            ->method('isJsonContent');
+
+        $result = $reflectedAttachContentHeader->invokeArgs($header, [
+            $mockResponse,
+        ]);
+
+        $this->assertSame($result, $mockResponse);
+    }
+
+    public function testAttachContentHeaderBailsIfNoBodyContent()
+    {
+        $mockStream = $this->createMock(StreamInterface::class);
+        $mockStream->expects($this->once())
+            ->method('getSize')
+            ->willReturn(null);
+
+        $mockResponse = $this->createMock(ResponseInterface::class);
+        $mockResponse->method('getHeader')
+            ->willReturn([]);
+        $mockResponse->expects($this->once())
+            ->method('getBody')
+            ->willReturn($mockStream);
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedAttachContentHeader = $reflectedHeader->getMethod('attachContentHeader');
+        $reflectedAttachContentHeader->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'isJsonContent',
+            ])
+            ->getMock();
+        $header->expects($this->never())
+            ->method('isJsonContent');
+
+        $result = $reflectedAttachContentHeader->invokeArgs($header, [
+            $mockResponse,
+        ]);
+
+        $this->assertSame($result, $mockResponse);
+    }
+
+    public function testAttachContentHeaderAttachesJsonHeaderIfJsonContent()
+    {
+        $mockStream = $this->createMock(StreamInterface::class);
+        $mockStream->method('getSize')
+            ->willReturn(1);
+
+        $mockResponse = $this->createMock(ResponseInterface::class);
+        $mockResponse->method('getHeader')
+            ->willReturn([]);
+        $mockResponse->expects($this->exactly(2))
+            ->method('getBody')
+            ->willReturn($mockStream);
+        $mockResponse->expects($this->once())
+            ->method('withHeader')
+            ->with('content', 'application/json')
+            ->will($this->returnSelf());
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedAttachContentHeader = $reflectedHeader->getMethod('attachContentHeader');
+        $reflectedAttachContentHeader->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'isJsonContent',
+            ])
+            ->getMock();
+        $header->expects($this->once())
+            ->method('isJsonContent')
+            ->with($mockStream)
+            ->willReturn(true);
+
+        $result = $reflectedAttachContentHeader->invokeArgs($header, [
+            $mockResponse,
+        ]);
+
+        $this->assertSame($result, $mockResponse);
+    }
+
+    public function testAttachContentHeaderDefaultsToTextHeader()
+    {
+        $mockStream = $this->createMock(StreamInterface::class);
+        $mockStream->method('getSize')
+            ->willReturn(1);
+
+        $mockResponse = $this->createMock(ResponseInterface::class);
+        $mockResponse->method('getHeader')
+            ->willReturn([]);
+        $mockResponse->method('getBody')
+            ->willReturn($mockStream);
+        $mockResponse->method('withHeader')
+            ->with('content', 'text/plain')
+            ->will($this->returnSelf());
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedAttachContentHeader = $reflectedHeader->getMethod('attachContentHeader');
+        $reflectedAttachContentHeader->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'isJsonContent',
+            ])
+            ->getMock();
+        $header->method('isJsonContent')
+            ->with($mockStream)
+            ->willReturn(false);
+
+        $result = $reflectedAttachContentHeader->invokeArgs($header, [
+            $mockResponse,
+        ]);
+
+        $this->assertSame($result, $mockResponse);
+    }
+
     public function testIsJsonContentReturnsTrueIfJson()
     {
         $content = '{"key":"value"}';

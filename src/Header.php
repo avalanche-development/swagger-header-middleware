@@ -107,11 +107,11 @@ class Header implements LoggerAwareInterface
 
         $content = $response->getBody();
         if ($this->isJsonContent($content)) {
-            $response = $response->withHeader('Content', 'application/json');
+            $response = $response->withHeader('content', 'application/json');
             return $response;
         }
 
-        $response = $response->withHeader('Content', 'text/plain');
+        $response = $response->withHeader('content', 'text/plain');
         return $response;
     }
 
