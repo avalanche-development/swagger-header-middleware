@@ -144,7 +144,7 @@ class Header implements LoggerAwareInterface
      */
     protected function checkOutgoingContent(Response $response, array $produceTypes)
     {
-        if (!empty($response->getHeader('content'))) {
+        if (empty($response->getHeader('content'))) {
             return true;
         }
 

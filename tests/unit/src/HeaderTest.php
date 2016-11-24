@@ -486,6 +486,72 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($result);
     }
 
+    public function testCheckOutgoingContentReturnsTrueIfEmptyHeader()
+    {
+        $mockResponse = $this->createMock(ResponseInterface::class);
+        $mockResponse->expects($this->once())
+            ->method('getHeader')
+            ->with('content')
+            ->willReturn([]);
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedCheckOutgoingContent = $reflectedHeader->getMethod('checkOutgoingContent');
+        $reflectedCheckOutgoingContent->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'checkMessageContent'
+            ])
+            ->getMock();
+        $header->expects($this->never())
+            ->method('checkMessageContent');
+
+        $result = $reflectedCheckOutgoingContent->invokeArgs($header, [
+            $mockResponse,
+            [],
+        ]);
+
+        $this->assertTrue($result);
+    }
+
+    public function testCheckOutgoingContentPassesOnCheckerIfContainsHeaders()
+    {
+        $produceTypes = [
+            'application/json',
+        ];
+
+        $mockResponse = $this->createMock(ResponseInterface::class);
+        $mockResponse->expects($this->once())
+            ->method('getHeader')
+            ->with('content')
+            ->willReturn([
+                'some value',
+            ]);
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedCheckOutgoingContent = $reflectedHeader->getMethod('checkOutgoingContent');
+        $reflectedCheckOutgoingContent->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'checkMessageContent'
+            ])
+            ->getMock();
+        $header->expects($this->once())
+            ->method('checkMessageContent')
+            ->with($mockResponse, $produceTypes)
+            ->willReturn(true);
+
+        $result = $reflectedCheckOutgoingContent->invokeArgs($header, [
+            $mockResponse,
+            $produceTypes,
+        ]);
+
+        $this->assertTrue($result);
+    }
+
     public function testLog()
     {
         $message = 'test debug message';
