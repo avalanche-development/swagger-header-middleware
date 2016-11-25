@@ -158,10 +158,12 @@ class Header implements LoggerAwareInterface
      */
     protected function checkExpectHeader(Request $request, Response $response)
     {
-        // if no content, quick bail
-        // if no expectations, quick bail
-        // else, etc
-        return true;
+        if (empty($request->getHeader('expect'))) {
+            return true;
+        }
+
+        $expectTypes = $request->getHeader('expect');
+        return $this->checkMessageContent($response, $expectTypes);
     }
 
     /**

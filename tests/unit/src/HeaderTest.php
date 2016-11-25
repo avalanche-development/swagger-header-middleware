@@ -552,6 +552,74 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
+    public function testCheckExpectHeaderReturnsTrueIfEmptyHeader()
+    {
+        $mockRequest = $this->createMock(RequestInterface::class);
+        $mockRequest->expects($this->once())
+            ->method('getHeader')
+            ->with('expect')
+            ->willReturn([]);
+
+        $mockResponse = $this->createMock(ResponseInterface::class);
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedCheckExpectHeader = $reflectedHeader->getMethod('checkExpectHeader');
+        $reflectedCheckExpectHeader->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'checkMessageContent'
+            ])
+            ->getMock();
+        $header->expects($this->never())
+            ->method('checkMessageContent');
+
+        $result = $reflectedCheckExpectHeader->invokeArgs($header, [
+            $mockRequest,
+            $mockResponse,
+        ]);
+
+        $this->assertTrue($result);
+    }
+
+    public function testCheckExpectHeaderPassesOnCheckerIfContainsHeaders()
+    {
+        $expectTypes = [
+            'application/json',
+        ];
+
+        $mockRequest = $this->createMock(RequestInterface::class);
+        $mockRequest->expects($this->exactly(2))
+            ->method('getHeader')
+            ->with('expect')
+            ->willReturn($expectTypes);
+
+        $mockResponse = $this->createMock(ResponseInterface::class);
+
+        $reflectedHeader = new ReflectionClass(Header::class);
+        $reflectedCheckExpectHeader = $reflectedHeader->getMethod('checkExpectHeader');
+        $reflectedCheckExpectHeader->setAccessible(true);
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'checkMessageContent'
+            ])
+            ->getMock();
+        $header->expects($this->once())
+            ->method('checkMessageContent')
+            ->with($mockResponse, $expectTypes)
+            ->willReturn(true);
+
+        $result = $reflectedCheckExpectHeader->invokeArgs($header, [
+            $mockRequest,
+            $mockResponse,
+        ]);
+
+        $this->assertTrue($result);
+    }
+
     public function testLog()
     {
         $message = 'test debug message';
