@@ -6,6 +6,7 @@ use AvalancheDevelopment\Peel\HttpError;
 use Psr\Http\Message\MessageInterface as Message;
 use Psr\Http\Message\RequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as ServerRequest;
 use Psr\Http\Message\StreamInterface as Stream;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
@@ -22,12 +23,12 @@ class Header implements LoggerAwareInterface
     }
 
     /**
-     * @param Request $request
+     * @param ServerRequest $request
      * @param Response $response
      * @param callable $next
      * @return Response $response
      */
-    public function __invoke(Request $request, Response $response, callable $next)
+    public function __invoke(ServerRequest $request, Response $response, callable $next)
     {
         if (!$request->getAttribute('swagger')) {
             $this->log('no swagger information found in request, skipping');

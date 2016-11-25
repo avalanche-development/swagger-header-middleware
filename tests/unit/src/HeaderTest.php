@@ -6,6 +6,7 @@ use PHPUnit_Framework_TestCase;
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
@@ -31,13 +32,423 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $this->assertAttributeEquals($logger, 'logger', $header);
     }
 
-    public function testInvokeBailsIfNoSwaggerFound() {}
+    public function testInvokeBailsIfNoSwaggerFound()
+    {
+        $mockRequest = $this->createMock(ServerRequestInterface::class);
+        $mockRequest->expects($this->once())
+            ->method('getAttribute')
+            ->with('swagger')
+            ->willReturn(null);
 
-    public function testInvokePullsConsumeTypesFromSwagger() {}
+        $mockResponse = $this->createMock(ResponseInterface::class);
 
-    public function testInvokeAllowsRequestIfAcceptableHeader() {}
+        $mockCallable = function ($request, $response) {
+            return $response;
+        };
 
-    public function testInvokeBailsIfUnacceptableHeader() {}
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'checkIncomingContent',
+                'log',
+            ])
+            ->getMock();
+        $header->expects($this->never())
+            ->method('checkIncomingContent');
+        $header->expects($this->once())
+            ->method('log')
+            ->with('no swagger information found in request, skipping');
+
+        $result = $header->__invoke($mockRequest, $mockResponse, $mockCallable);
+
+        $this->assertSame($mockResponse, $result);
+    }
+
+    public function testInvokeChecksRequestHeadersAgainstConsumes()
+    {
+        $consumeTypes = [
+            'application/json',
+        ];
+
+        $mockRequest = $this->createMock(ServerRequestInterface::class);
+        $mockRequest->method('getAttribute')
+            ->with('swagger')
+            ->willReturn([
+                'consumes' => $consumeTypes,
+                'produces' => [],
+            ]);
+
+        $mockResponse = $this->createMock(ResponseInterface::class);
+
+        $mockCallable = function ($request, $response) {
+            return $response;
+        };
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'attachContentHeader',
+                'checkExpectHeader',
+                'checkIncomingContent',
+                'checkOutgoingContent',
+                'log',
+            ])
+            ->getMock();
+        $header->method('attachContentHeader')
+            ->will($this->returnArgument(0));
+        $header->method('checkExpectHeader')
+            ->willReturn(true);
+        $header->expects($this->once())
+            ->method('checkIncomingContent')
+            ->with($mockRequest, $consumeTypes)
+            ->willReturn(true);
+        $header->method('checkOutgoingContent')
+            ->willReturn(true);
+        $header->expects($this->never())
+            ->method('log');
+
+        $header->__invoke($mockRequest, $mockResponse, $mockCallable);
+    }
+ 
+    /**
+     * @expectedException AvalancheDevelopment\Peel\HttpError\NotAcceptable
+     * @expectedExceptionMessage Unacceptable header was passed into this endpoint
+     */
+    public function testInvokeBailsIfUnacceptableHeaderInRequest()
+    {
+        $mockRequest = $this->createMock(ServerRequestInterface::class);
+        $mockRequest->method('getAttribute')
+            ->with('swagger')
+            ->willReturn([
+                'consumes' => [],
+            ]);
+
+        $mockResponse = $this->createMock(ResponseInterface::class);
+
+        $mockCallable = function ($request, $response) {
+            return $response;
+        };
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'attachContentHeader',
+                'checkIncomingContent',
+                'log',
+            ])
+            ->getMock();
+        $header->expects($this->never())
+            ->method('attachContentHeader');
+        $header->method('checkIncomingContent')
+            ->willReturn(false);
+        $header->expects($this->never())
+            ->method('log');
+
+        $header->__invoke($mockRequest, $mockResponse, $mockCallable);
+    }
+
+    public function testInvokePassesAlongResponseFromCallStack()
+    {
+        $mockRequest = $this->createMock(ServerRequestInterface::class);
+        $mockRequest->method('getAttribute')
+            ->with('swagger')
+            ->willReturn([
+                'consumes' => [],
+                'produces' => [],
+            ]);
+
+        $mockResponse = $this->createMock(ResponseInterface::class);
+        $mockResponseModified = $this->createMock(ResponseInterface::class);
+
+        $mockCallable = function ($request, $response) use ($mockResponseModified) {
+            return $mockResponseModified;
+        };
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'attachContentHeader',
+                'checkExpectHeader',
+                'checkIncomingContent',
+                'checkOutgoingContent',
+                'log',
+            ])
+            ->getMock();
+        $header->method('attachContentHeader')
+            ->will($this->returnArgument(0));
+        $header->method('checkExpectHeader')
+            ->willReturn(true);
+        $header->method('checkIncomingContent')
+            ->willReturn(true);
+        $header->method('checkOutgoingContent')
+            ->willReturn(true);
+        $header->expects($this->never())
+            ->method('log');
+
+        $result = $header->__invoke($mockRequest, $mockResponse, $mockCallable);
+
+        $this->assertSame($mockResponseModified, $result);
+    }
+
+    public function testInvokeAttachesContentHeadertoResponse()
+    {
+        $mockRequest = $this->createMock(ServerRequestInterface::class);
+        $mockRequest->method('getAttribute')
+            ->with('swagger')
+            ->willReturn([
+                'consumes' => [],
+                'produces' => [],
+            ]);
+
+        $mockResponse = $this->createMock(ResponseInterface::class);
+
+        $mockCallable = function ($request, $response) {
+            return $response;
+        };
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'attachContentHeader',
+                'checkExpectHeader',
+                'checkIncomingContent',
+                'checkOutgoingContent',
+                'log',
+            ])
+            ->getMock();
+        $header->expects($this->once())
+            ->method('attachContentHeader')
+            ->with($mockResponse)
+            ->will($this->returnArgument(0));
+        $header->method('checkExpectHeader')
+            ->willReturn(true);
+        $header->method('checkIncomingContent')
+            ->willReturn(true);
+        $header->method('checkOutgoingContent')
+            ->willReturn(true);
+        $header->expects($this->never())
+            ->method('log');
+
+        $header->__invoke($mockRequest, $mockResponse, $mockCallable);
+    }
+ 
+    public function testInvokeChecksResponseHeaderAgainstProduces()
+    {
+        $produceTypes = [
+            'application/json',
+        ];
+
+        $mockRequest = $this->createMock(ServerRequestInterface::class);
+        $mockRequest->method('getAttribute')
+            ->with('swagger')
+            ->willReturn([
+                'consumes' => [],
+                'produces' => $produceTypes,
+            ]);
+
+        $mockResponse = $this->createMock(ResponseInterface::class);
+
+        $mockCallable = function ($request, $response) {
+            return $response;
+        };
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'attachContentHeader',
+                'checkExpectHeader',
+                'checkIncomingContent',
+                'checkOutgoingContent',
+                'log',
+            ])
+            ->getMock();
+        $header->method('attachContentHeader')
+            ->will($this->returnArgument(0));
+        $header->method('checkExpectHeader')
+            ->willReturn(true);
+        $header->method('checkIncomingContent')
+            ->willReturn(true);
+        $header->expects($this->once())
+            ->method('checkOutgoingContent')
+            ->with($mockResponse, $produceTypes)
+            ->willReturn(true);
+        $header->expects($this->never())
+            ->method('log');
+
+        $header->__invoke($mockRequest, $mockResponse, $mockCallable);
+    }
+
+    /**
+     * @expectedException AvalancheDevelopment\Peel\HttpError\InternalServerError
+     * @expectedExceptionMessage Invalid content detected
+     */
+    public function testInvokeBailsIfUnacceptableHeaderInResponse()
+    {
+        $mockRequest = $this->createMock(ServerRequestInterface::class);
+        $mockRequest->method('getAttribute')
+            ->with('swagger')
+            ->willReturn([
+                'consumes' => [],
+                'produces' => [],
+            ]);
+
+        $mockResponse = $this->createMock(ResponseInterface::class);
+
+        $mockCallable = function ($request, $response) {
+            return $response;
+        };
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'attachContentHeader',
+                'checkExpectHeader',
+                'checkIncomingContent',
+                'checkOutgoingContent',
+                'log',
+            ])
+            ->getMock();
+        $header->method('attachContentHeader')
+            ->will($this->returnArgument(0));
+        $header->expects($this->never())
+            ->method('checkExpectHeader');
+        $header->method('checkIncomingContent')
+            ->willReturn(true);
+        $header->method('checkOutgoingContent')
+            ->willReturn(false);
+        $header->expects($this->never())
+            ->method('log');
+
+        $header->__invoke($mockRequest, $mockResponse, $mockCallable);
+    }
+
+    public function testInvokeChecksExpectedHeaderAgainstResponse()
+    {
+        $mockRequest = $this->createMock(ServerRequestInterface::class);
+        $mockRequest->method('getAttribute')
+            ->with('swagger')
+            ->willReturn([
+                'consumes' => [],
+                'produces' => [],
+            ]);
+
+        $mockResponse = $this->createMock(ResponseInterface::class);
+
+        $mockCallable = function ($request, $response) {
+            return $response;
+        };
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'attachContentHeader',
+                'checkExpectHeader',
+                'checkIncomingContent',
+                'checkOutgoingContent',
+                'log',
+            ])
+            ->getMock();
+        $header->method('attachContentHeader')
+            ->will($this->returnArgument(0));
+        $header->expects($this->once())
+            ->method('checkExpectHeader')
+            ->with($mockRequest, $mockResponse)
+            ->willReturn(true);
+        $header->method('checkIncomingContent')
+            ->willReturn(true);
+        $header->method('checkOutgoingContent')
+            ->willReturn(true);
+        $header->expects($this->never())
+            ->method('log');
+
+        $header->__invoke($mockRequest, $mockResponse, $mockCallable);
+    }
+
+    /**
+     * @expectedException AvalancheDevelopment\Peel\HttpError\ExpectationFailed
+     * @expectedExceptionMessage Unexpected content detected
+     */
+    public function testInvokeBailsIfExpectedHeaderMismatchResponse()
+    {
+        $mockRequest = $this->createMock(ServerRequestInterface::class);
+        $mockRequest->method('getAttribute')
+            ->with('swagger')
+            ->willReturn([
+                'consumes' => [],
+                'produces' => [],
+            ]);
+
+        $mockResponse = $this->createMock(ResponseInterface::class);
+
+        $mockCallable = function ($request, $response) {
+            return $response;
+        };
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'attachContentHeader',
+                'checkExpectHeader',
+                'checkIncomingContent',
+                'checkOutgoingContent',
+                'log',
+            ])
+            ->getMock();
+        $header->method('attachContentHeader')
+            ->will($this->returnArgument(0));
+        $header->method('checkExpectHeader')
+            ->willReturn(false);
+        $header->method('checkIncomingContent')
+            ->willReturn(true);
+        $header->method('checkOutgoingContent')
+            ->willReturn(true);
+        $header->expects($this->never())
+            ->method('log');
+
+        $header->__invoke($mockRequest, $mockResponse, $mockCallable);
+    }
+
+    public function testInvokeReturnsResponse()
+    {
+        $mockRequest = $this->createMock(ServerRequestInterface::class);
+        $mockRequest->method('getAttribute')
+            ->with('swagger')
+            ->willReturn([
+                'consumes' => [],
+                'produces' => [],
+            ]);
+
+        $mockResponse = $this->createMock(ResponseInterface::class);
+
+        $mockCallable = function ($request, $response) {
+            return $response;
+        };
+
+        $header = $this->getMockBuilder(Header::class)
+            ->disableOriginalConstructor()
+            ->setMethods([
+                'attachContentHeader',
+                'checkExpectHeader',
+                'checkIncomingContent',
+                'checkOutgoingContent',
+                'log',
+            ])
+            ->getMock();
+        $header->method('attachContentHeader')
+            ->will($this->returnArgument(0));
+        $header->method('checkExpectHeader')
+            ->willReturn(true);
+        $header->method('checkIncomingContent')
+            ->willReturn(true);
+        $header->method('checkOutgoingContent')
+            ->willReturn(true);
+        $header->expects($this->never())
+            ->method('log');
+
+        $result = $header->__invoke($mockRequest, $mockResponse, $mockCallable);
+
+        $this->assertSame($mockResponse, $result);
+    }
 
     public function testCheckIncomingContentReturnsTrueIfEmptyBody()
     {
