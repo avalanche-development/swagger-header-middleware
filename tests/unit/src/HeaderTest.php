@@ -88,7 +88,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->setMethods([
                 'attachContentHeader',
-                'checkExpectHeader',
+                'checkAcceptHeader',
                 'checkIncomingContent',
                 'checkOutgoingContent',
                 'log',
@@ -96,7 +96,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->getMock();
         $header->method('attachContentHeader')
             ->will($this->returnArgument(0));
-        $header->method('checkExpectHeader')
+        $header->method('checkAcceptHeader')
             ->willReturn(true);
         $header->expects($this->once())
             ->method('checkIncomingContent')
@@ -168,7 +168,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->setMethods([
                 'attachContentHeader',
-                'checkExpectHeader',
+                'checkAcceptHeader',
                 'checkIncomingContent',
                 'checkOutgoingContent',
                 'log',
@@ -176,7 +176,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->getMock();
         $header->method('attachContentHeader')
             ->will($this->returnArgument(0));
-        $header->method('checkExpectHeader')
+        $header->method('checkAcceptHeader')
             ->willReturn(true);
         $header->method('checkIncomingContent')
             ->willReturn(true);
@@ -210,7 +210,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->setMethods([
                 'attachContentHeader',
-                'checkExpectHeader',
+                'checkAcceptHeader',
                 'checkIncomingContent',
                 'checkOutgoingContent',
                 'log',
@@ -220,7 +220,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->method('attachContentHeader')
             ->with($mockResponse)
             ->will($this->returnArgument(0));
-        $header->method('checkExpectHeader')
+        $header->method('checkAcceptHeader')
             ->willReturn(true);
         $header->method('checkIncomingContent')
             ->willReturn(true);
@@ -256,7 +256,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->setMethods([
                 'attachContentHeader',
-                'checkExpectHeader',
+                'checkAcceptHeader',
                 'checkIncomingContent',
                 'checkOutgoingContent',
                 'log',
@@ -264,7 +264,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->getMock();
         $header->method('attachContentHeader')
             ->will($this->returnArgument(0));
-        $header->method('checkExpectHeader')
+        $header->method('checkAcceptHeader')
             ->willReturn(true);
         $header->method('checkIncomingContent')
             ->willReturn(true);
@@ -302,7 +302,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->setMethods([
                 'attachContentHeader',
-                'checkExpectHeader',
+                'checkAcceptHeader',
                 'checkIncomingContent',
                 'checkOutgoingContent',
                 'log',
@@ -311,7 +311,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $header->method('attachContentHeader')
             ->will($this->returnArgument(0));
         $header->expects($this->never())
-            ->method('checkExpectHeader');
+            ->method('checkAcceptHeader');
         $header->method('checkIncomingContent')
             ->willReturn(true);
         $header->method('checkOutgoingContent')
@@ -322,7 +322,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $header->__invoke($mockRequest, $mockResponse, $mockCallable);
     }
 
-    public function testInvokeChecksExpectedHeaderAgainstResponse()
+    public function testInvokeChecksAcceptedHeaderAgainstResponse()
     {
         $mockRequest = $this->createMock(ServerRequestInterface::class);
         $mockRequest->method('getAttribute')
@@ -342,7 +342,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->setMethods([
                 'attachContentHeader',
-                'checkExpectHeader',
+                'checkAcceptHeader',
                 'checkIncomingContent',
                 'checkOutgoingContent',
                 'log',
@@ -351,7 +351,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $header->method('attachContentHeader')
             ->will($this->returnArgument(0));
         $header->expects($this->once())
-            ->method('checkExpectHeader')
+            ->method('checkAcceptHeader')
             ->with($mockRequest, $mockResponse)
             ->willReturn(true);
         $header->method('checkIncomingContent')
@@ -365,10 +365,10 @@ class HeaderTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException AvalancheDevelopment\Peel\HttpError\ExpectationFailed
-     * @expectedExceptionMessage Unexpected content detected
+     * @expectedException AvalancheDevelopment\Peel\HttpError\NotAcceptable
+     * @expectedExceptionMessage Unacceptable content detected
      */
-    public function testInvokeBailsIfExpectedHeaderMismatchResponse()
+    public function testInvokeBailsIfAcceptHeaderMismatchResponse()
     {
         $mockRequest = $this->createMock(ServerRequestInterface::class);
         $mockRequest->method('getAttribute')
@@ -388,7 +388,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->setMethods([
                 'attachContentHeader',
-                'checkExpectHeader',
+                'checkAcceptHeader',
                 'checkIncomingContent',
                 'checkOutgoingContent',
                 'log',
@@ -396,7 +396,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->getMock();
         $header->method('attachContentHeader')
             ->will($this->returnArgument(0));
-        $header->method('checkExpectHeader')
+        $header->method('checkAcceptHeader')
             ->willReturn(false);
         $header->method('checkIncomingContent')
             ->willReturn(true);
@@ -428,7 +428,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->setMethods([
                 'attachContentHeader',
-                'checkExpectHeader',
+                'checkAcceptHeader',
                 'checkIncomingContent',
                 'checkOutgoingContent',
                 'log',
@@ -436,7 +436,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->getMock();
         $header->method('attachContentHeader')
             ->will($this->returnArgument(0));
-        $header->method('checkExpectHeader')
+        $header->method('checkAcceptHeader')
             ->willReturn(true);
         $header->method('checkIncomingContent')
             ->willReturn(true);
@@ -623,14 +623,16 @@ class HeaderTest extends PHPUnit_Framework_TestCase
 
     public function testExtractContentHeaderHandlesMultipleTypes()
     {
-        $contentTypes = 'application/vnd.github+json, application/json';
+        $contentTypes = 'application/vnd.github+json,application/json';
         $contentTypeCount = 2;
 
         $mockMessage = $this->createMock(MessageInterface::class);
         $mockMessage->expects($this->once())
             ->method('getHeader')
-            ->with('content')
-            ->willReturn($contentTypes);
+            ->with('content-type')
+            ->willReturn([
+                $contentTypes,
+            ]);
 
         $reflectedHeader = new ReflectionClass(Header::class);
         $reflectedExtractContentHeader = $reflectedHeader->getMethod('extractContentHeader');
@@ -658,8 +660,10 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $mockMessage = $this->createMock(MessageInterface::class);
         $mockMessage->expects($this->once())
             ->method('getHeader')
-            ->with('content')
-            ->willReturn($contentType);
+            ->with('content-type')
+            ->willReturn([
+                $contentType,
+            ]);
 
         $reflectedHeader = new ReflectionClass(Header::class);
         $reflectedExtractContentHeader = $reflectedHeader->getMethod('extractContentHeader');
@@ -687,8 +691,10 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $mockMessage = $this->createMock(MessageInterface::class);
         $mockMessage->expects($this->once())
             ->method('getHeader')
-            ->with('content')
-            ->willReturn($contentType);
+            ->with('content-type')
+            ->willReturn([
+                $contentType,
+            ]);
 
         $reflectedHeader = new ReflectionClass(Header::class);
         $reflectedExtractContentHeader = $reflectedHeader->getMethod('extractContentHeader');
@@ -711,7 +717,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $mockResponse = $this->createMock(ResponseInterface::class);
         $mockResponse->expects($this->once())
             ->method('getHeader')
-            ->with('content')
+            ->with('content-type')
             ->willReturn([
                 'some value',
             ]);
@@ -786,7 +792,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->willReturn($mockStream);
         $mockResponse->expects($this->once())
             ->method('withHeader')
-            ->with('content', 'application/json')
+            ->with('content-type', 'application/json')
             ->will($this->returnSelf());
 
         $reflectedHeader = new ReflectionClass(Header::class);
@@ -823,7 +829,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $mockResponse->method('getBody')
             ->willReturn($mockStream);
         $mockResponse->method('withHeader')
-            ->with('content', 'text/plain')
+            ->with('content-type', 'text/plain')
             ->will($this->returnSelf());
 
         $reflectedHeader = new ReflectionClass(Header::class);
@@ -902,7 +908,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $mockResponse = $this->createMock(ResponseInterface::class);
         $mockResponse->expects($this->once())
             ->method('getHeader')
-            ->with('content')
+            ->with('content-type')
             ->willReturn([]);
 
         $reflectedHeader = new ReflectionClass(Header::class);
@@ -935,7 +941,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $mockResponse = $this->createMock(ResponseInterface::class);
         $mockResponse->expects($this->once())
             ->method('getHeader')
-            ->with('content')
+            ->with('content-type')
             ->willReturn([
                 'some value',
             ]);
@@ -963,19 +969,19 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    public function testCheckExpectHeaderReturnsTrueIfEmptyHeader()
+    public function testCheckAcceptHeaderReturnsTrueIfEmptyHeader()
     {
         $mockRequest = $this->createMock(RequestInterface::class);
         $mockRequest->expects($this->once())
             ->method('getHeader')
-            ->with('expect')
+            ->with('accept')
             ->willReturn([]);
 
         $mockResponse = $this->createMock(ResponseInterface::class);
 
         $reflectedHeader = new ReflectionClass(Header::class);
-        $reflectedCheckExpectHeader = $reflectedHeader->getMethod('checkExpectHeader');
-        $reflectedCheckExpectHeader->setAccessible(true);
+        $reflectedCheckAcceptHeader = $reflectedHeader->getMethod('checkAcceptHeader');
+        $reflectedCheckAcceptHeader->setAccessible(true);
 
         $header = $this->getMockBuilder(Header::class)
             ->disableOriginalConstructor()
@@ -986,7 +992,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $header->expects($this->never())
             ->method('checkMessageContent');
 
-        $result = $reflectedCheckExpectHeader->invokeArgs($header, [
+        $result = $reflectedCheckAcceptHeader->invokeArgs($header, [
             $mockRequest,
             $mockResponse,
         ]);
@@ -994,7 +1000,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    public function testCheckExpectHeaderPassesOnCheckerIfContainsHeaders()
+    public function testCheckAcceptHeaderPassesOnCheckerIfContainsHeaders()
     {
         $expectTypes = [
             'application/json',
@@ -1003,14 +1009,14 @@ class HeaderTest extends PHPUnit_Framework_TestCase
         $mockRequest = $this->createMock(RequestInterface::class);
         $mockRequest->expects($this->exactly(2))
             ->method('getHeader')
-            ->with('expect')
+            ->with('accept')
             ->willReturn($expectTypes);
 
         $mockResponse = $this->createMock(ResponseInterface::class);
 
         $reflectedHeader = new ReflectionClass(Header::class);
-        $reflectedCheckExpectHeader = $reflectedHeader->getMethod('checkExpectHeader');
-        $reflectedCheckExpectHeader->setAccessible(true);
+        $reflectedCheckAcceptHeader = $reflectedHeader->getMethod('checkAcceptHeader');
+        $reflectedCheckAcceptHeader->setAccessible(true);
 
         $header = $this->getMockBuilder(Header::class)
             ->disableOriginalConstructor()
@@ -1023,7 +1029,7 @@ class HeaderTest extends PHPUnit_Framework_TestCase
             ->with($mockResponse, $expectTypes)
             ->willReturn(true);
 
-        $result = $reflectedCheckExpectHeader->invokeArgs($header, [
+        $result = $reflectedCheckAcceptHeader->invokeArgs($header, [
             $mockRequest,
             $mockResponse,
         ]);

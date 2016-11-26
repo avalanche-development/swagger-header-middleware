@@ -47,8 +47,8 @@ class Header implements LoggerAwareInterface
         if (!$this->checkOutgoingContent($result, $produceTypes)) {
             throw new HttpError\InternalServerError('Invalid content detected');
         }
-        if (!$this->checkExpectHeader($request, $result)) {
-            throw new HttpError\ExpectationFailed('Unexpected content detected');
+        if (!$this->checkAcceptHeader($request, $result)) {
+            throw new HttpError\NotAcceptable('Unacceptable content detected');
         }
 
         return $result;
@@ -92,7 +92,8 @@ class Header implements LoggerAwareInterface
      */
     protected function extractContentHeader(Message $message)
     {
-        $contentHeaders = $message->getHeader('content');
+        $contentHeaders = $message->getHeader('content-type');
+        $contentHeaders = current($contentHeaders);
         $contentHeaders = explode(',', $contentHeaders);
         $contentHeaders = array_map(function ($entity) {
             $entity = explode(';', $entity);
@@ -109,7 +110,7 @@ class Header implements LoggerAwareInterface
      */
     protected function attachContentHeader(Response $response)
     {
-        if (!empty($response->getHeader('content'))) {
+        if (!empty($response->getHeader('content-type'))) {
             return $response;
         }
 
@@ -119,11 +120,11 @@ class Header implements LoggerAwareInterface
 
         $content = $response->getBody();
         if ($this->isJsonContent($content)) {
-            $response = $response->withHeader('content', 'application/json');
+            $response = $response->withHeader('content-type', 'application/json');
             return $response;
         }
 
-        $response = $response->withHeader('content', 'text/plain');
+        $response = $response->withHeader('content-type', 'text/plain');
         return $response;
     }
 
@@ -145,7 +146,7 @@ class Header implements LoggerAwareInterface
      */
     protected function checkOutgoingContent(Response $response, array $produceTypes)
     {
-        if (empty($response->getHeader('content'))) {
+        if (empty($response->getHeader('content-type'))) {
             return true;
         }
 
@@ -157,14 +158,14 @@ class Header implements LoggerAwareInterface
      * @param Response
      * @return boolean
      */
-    protected function checkExpectHeader(Request $request, Response $response)
+    protected function checkAcceptHeader(Request $request, Response $response)
     {
-        if (empty($request->getHeader('expect'))) {
+        if (empty($request->getHeader('accept'))) {
             return true;
         }
 
-        $expectTypes = $request->getHeader('expect');
-        return $this->checkMessageContent($response, $expectTypes);
+        $acceptTypes = $request->getHeader('accept');
+        return $this->checkMessageContent($response, $acceptTypes);
     }
 
     /**
