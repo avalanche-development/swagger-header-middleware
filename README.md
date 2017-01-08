@@ -1,7 +1,7 @@
 swagger-header-middleware
 ==============
 
-PHP middleware that validates content headers, enforces based on [swagger](http://swagger.io/) spec, and may try to infer outbound content types.
+PHP middleware that tries to infer outbound content types and attach appropriate headers.
 
 [![Build Status](https://travis-ci.org/avalanche-development/swagger-header-middleware.svg?branch=master)](https://travis-ci.org/avalanche-development/swagger-header-middleware)
 [![Code Climate](https://codeclimate.com/github/avalanche-development/swagger-header-middleware/badges/gpa.svg)](https://codeclimate.com/github/avalanche-development/swagger-header-middleware)
@@ -19,14 +19,14 @@ swagger-header-middleware requires PHP 5.6 or newer.
 
 ## Usage
 
-This middleware depends on [swagger-router-middleware](https://github.com/avalanche-development/swagger-router-middleware) to have a resolved swagger attribute attached to the request object. If it is not found, then all header checks are skipped. If it is, then it will use the produces/consumes keys to check incoming content, attach outbound content types, check outgoing content, and also validate against the request accept fields. If any validation fails than an appropriate [peel](https://github.com/avalanche-development/peel) exception is thrown.
+This middleware depends on [swagger-router-middleware](https://github.com/avalanche-development/swagger-router-middleware) to have a resolved swagger attribute attached to the request object. If it is not found, then all modifications to the response object are skipped. If it is, it will attempt to attach outbound content types.
 
 ```php
 $header = new AvalancheDevelopment\SwaggerHeaderMiddleware\Header;
 $result = $header($request, $response, $next); // middleware signature
 ```
 
-It is recommended that this is one of the top items in the stack, after swagger-router-middleware, as to reject bad requests as soon as possible and perform response validations after any other modifying middleware is done.
+It is recommended that this is one of the top items in the stack, soon after swagger-router-middleware, and ensure that any sort of header validation is done after this is executed.
 
 ### Interface
 
@@ -54,16 +54,11 @@ var_dump($swagger);
 ]
 ```
 
-Two different http errors may be thrown from this middleware.
-
-- 406 Not Acceptable - when the client's content-type or accept headers don't match swagger spec
-- 500 Internal Server Error - when the app's outbound content fails swagger validation
-
-Finally, if a json string is passed in, then this middleware will automatically attach a `application/json` content-type header... only if a header is not already provided. To override this overreaching behavior, simply attach your own header before this is hit.
+If a json string is passed in, then this middleware will automatically attach a `application/json` content-type header... only if a header is not already provided. To override this overreaching behavior, simply attach your own header before this is hit.
 
 ## Development
 
-This library is in active development. Some things are not yet supported (such as wildcard content-types).
+This library is in active development. Some things are not yet supported (such as detecting non-json header types).
 
 ### Tests
 

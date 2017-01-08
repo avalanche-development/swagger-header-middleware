@@ -35,73 +35,10 @@ class Header implements LoggerAwareInterface
             return $next($request, $response);
         }
 
-        $consumeTypes = $request->getAttribute('swagger')['consumes'];
-        if (!$this->checkIncomingContent($request, $consumeTypes)) {
-            throw new HttpError\NotAcceptable('Unacceptable header was passed into this endpoint');
-        }
-
         $result = $next($request, $response);
         $result = $this->attachContentHeader($result);
 
-        $produceTypes = $request->getAttribute('swagger')['produces'];
-        if (!$this->checkOutgoingContent($result, $produceTypes)) {
-            throw new HttpError\InternalServerError('Invalid content detected');
-        }
-        if (!$this->checkAcceptHeader($request, $result)) {
-            throw new HttpError\NotAcceptable('Unacceptable content detected');
-        }
-
         return $result;
-    }
-
-    /**
-     * @param Request $request
-     * @param array $consumeTypes
-     * @return boolean
-     */
-    protected function checkIncomingContent(Request $request, array $consumeTypes)
-    {
-        if (!$request->getBody()->getSize()) {
-            return true;
-        }
-
-        return $this->checkMessageContent($request, $consumeTypes);
-    }
-
-    /**
-     * @param Message $message
-     * @param array $acceptableTypes
-     * @return boolean
-     */
-    protected function checkMessageContent(Message $message, array $acceptableTypes)
-    {
-        $contentType = $this->extractContentHeader($message);
-        foreach ($acceptableTypes as $type) {
-            if (in_array($type, $contentType)) {
-                return true;
-            }
-            // todo wildcard mime type matching
-        }
-
-        return false;
-    }
-
-    /**
-     * @param Message $message
-     * @return array
-     */
-    protected function extractContentHeader(Message $message)
-    {
-        $contentHeaders = $message->getHeader('content-type');
-        $contentHeaders = current($contentHeaders);
-        $contentHeaders = explode(',', $contentHeaders);
-        $contentHeaders = array_map(function ($entity) {
-            $entity = explode(';', $entity);
-            $entity = current($entity);
-            return strtolower($entity);
-        }, $contentHeaders);
-
-        return $contentHeaders;
     }
 
     /**
@@ -137,35 +74,6 @@ class Header implements LoggerAwareInterface
         $data = (string) $content;
         $decodedData = json_decode($data);
         return (json_last_error() === JSON_ERROR_NONE) && ($decodedData !== null);
-    }
-
-    /**
-     * @param Response $response
-     * @param array $produceTypes
-     * @return Response
-     */
-    protected function checkOutgoingContent(Response $response, array $produceTypes)
-    {
-        if (empty($response->getHeader('content-type'))) {
-            return true;
-        }
-
-        return $this->checkMessageContent($response, $produceTypes);
-    }
-
-    /**
-     * @param Request
-     * @param Response
-     * @return boolean
-     */
-    protected function checkAcceptHeader(Request $request, Response $response)
-    {
-        if (empty($request->getHeader('accept'))) {
-            return true;
-        }
-
-        $acceptTypes = $request->getHeader('accept');
-        return $this->checkMessageContent($response, $acceptTypes);
     }
 
     /**
